@@ -6,7 +6,7 @@ import packageInfo from '../../package.json'
 const greenText = (text) => `\x1b[32m${text}\x1b[0m`
 
 export const config = {
-  appName: 'Gin-Vue-Admin',
+  appName: 'LoRAForge',
   showViteLogo: true,
   keepAliveTabs: false,
   logs: []
@@ -16,7 +16,7 @@ export const viteLogo = (env) => {
   if (config.showViteLogo) {
     console.log(
       greenText(
-        `> 欢迎使用Gin-Vue-Admin，开源地址：https://github.com/flipped-aurora/gin-vue-admin`
+        `> 欢迎使用LoRAForge，开源地址：https://github.com/flipped-aurora/gin-vue-admin`
       )
     )
     console.log(greenText(`> 当前版本:v${packageInfo.version}`))

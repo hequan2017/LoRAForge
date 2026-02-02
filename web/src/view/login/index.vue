@@ -12,9 +12,6 @@
           class="z-[999] pt-12 pb-10 md:w-96 w-full rounded-lg flex flex-col justify-between box-border"
         >
           <div>
-            <div class="flex items-center justify-center">
-              <Logo :size="6" />
-            </div>
             <div class="mb-9">
               <p class="text-center text-4xl font-bold">
                 {{ $GIN_VUE_ADMIN.appName }}
@@ -47,29 +44,7 @@
                   placeholder="请输入密码"
                 />
               </el-form-item>
-              <el-form-item
-                v-if="loginFormData.openCaptcha"
-                prop="captcha"
-                class="mb-6"
-              >
-                <div class="flex w-full justify-between">
-                  <el-input
-                    v-model="loginFormData.captcha"
-                    placeholder="请输入验证码"
-                    size="large"
-                    class="flex-1 mr-5"
-                  />
-                  <div class="w-1/3 h-11 bg-[#c3d4f2] rounded">
-                    <img
-                      v-if="picPath"
-                      class="w-full h-full"
-                      :src="picPath"
-                      alt="请输入验证码"
-                      @click="loginVerify()"
-                    />
-                  </div>
-                </div>
-              </el-form-item>
+
               <el-form-item class="mb-6">
                 <el-button
                   class="shadow shadow-active h-11 w-full"
@@ -93,11 +68,41 @@
         </div>
       </div>
       <div class="hidden md:block w-1/2 h-full float-right bg-[#194bfb]">
-        <img
-          class="h-full"
-          src="@/assets/login_right_banner.jpg"
-          alt="banner"
-        />
+        <div class="flex flex-col h-full justify-center px-10 text-white">
+          <h1 class="text-4xl font-bold mb-6">LoRAForge</h1>
+          <p class="text-xl mb-8 opacity-90">
+            您的下一代 LoRA 模型训练与管理专家
+          </p>
+          <div class="space-y-6">
+            <div class="flex items-start">
+              <div class="bg-white/20 p-2 rounded-lg mr-4">
+                <el-icon :size="24"><Monitor /></el-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">可视化管理</h3>
+                <p class="opacity-80 text-sm mt-1">直观的 Web 界面，轻松管理海量模型资产</p>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <div class="bg-white/20 p-2 rounded-lg mr-4">
+                <el-icon :size="24"><Cpu /></el-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">高效训练</h3>
+                <p class="opacity-80 text-sm mt-1">优化的训练流程，充分释放硬件潜能</p>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <div class="bg-white/20 p-2 rounded-lg mr-4">
+                <el-icon :size="24"><Connection /></el-icon>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">灵活扩展</h3>
+                <p class="opacity-80 text-sm mt-1">基于 Gin + Vue 架构，易于二次开发与集成</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -124,7 +129,6 @@
 </template>
 
 <script setup>
-  import { captcha } from '@/api/user'
   import { checkDB } from '@/api/initdb'
   import BottomInfo from '@/components/bottomInfo/bottomInfo.vue'
   import { reactive, ref } from 'vue'
@@ -139,7 +143,6 @@
   })
 
   const router = useRouter()
-  const captchaRequiredLength = ref(6)
   // 验证函数
   const checkUsername = (rule, value, callback) => {
     if (value.length < 5) {
@@ -155,52 +158,19 @@
       callback()
     }
   }
-  const checkCaptcha = (rule, value, callback) => {
-    if (!loginFormData.openCaptcha) {
-      return callback()
-    }
-    const sanitizedValue = (value || '').replace(/\s+/g, '')
-    if (!sanitizedValue) {
-      return callback(new Error('请输入验证码'))
-    }
-    if (!/^\d+$/.test(sanitizedValue)) {
-      return callback(new Error('验证码须为数字'))
-    }
-    if (sanitizedValue.length < captchaRequiredLength.value) {
-      return callback(
-        new Error(`请输入至少${captchaRequiredLength.value}位数字验证码`)
-      )
-    }
-    if (sanitizedValue !== value) {
-      loginFormData.captcha = sanitizedValue
-    }
-    callback()
-  }
 
-  // 获取验证码
-  const loginVerify = async () => {
-    const ele = await captcha()
-    captchaRequiredLength.value = Number(ele.data?.captchaLength) || 0
-    picPath.value = ele.data?.picPath
-    loginFormData.captchaId = ele.data?.captchaId
-    loginFormData.openCaptcha = ele.data?.openCaptcha
-  }
-  loginVerify()
+
+
 
   // 登录相关操作
   const loginForm = ref(null)
-  const picPath = ref('')
   const loginFormData = reactive({
     username: 'admin',
-    password: '',
-    captcha: '',
-    captchaId: '',
-    openCaptcha: false
+    password: ''
   })
   const rules = reactive({
     username: [{ validator: checkUsername, trigger: 'blur' }],
-    password: [{ validator: checkPassword, trigger: 'blur' }],
-    captcha: [{ validator: checkCaptcha, trigger: 'blur' }]
+    password: [{ validator: checkPassword, trigger: 'blur' }]
   })
 
   const userStore = useUserStore()
@@ -224,7 +194,6 @@
 
       // 登陆失败，刷新验证码
       if (!flag) {
-        await loginVerify()
         return false
       }
 

@@ -4,7 +4,7 @@
       <div class="w-full md:w-1/2">
         <el-card class="min-w-96">
           <template #header>
-            <el-divider>gin-vue-admin</el-divider>
+            <el-divider>LoRAForge</el-divider>
           </template>
           <div>
             <div class="w-full flex items-center justify-center">
@@ -12,7 +12,7 @@
                   <img
                     class="org-img dom-center"
                     src="@/assets/logo.png"
-                    alt="gin-vue-admin"
+                    alt="LoRAForge"
                   />
                 </a>
             </div>

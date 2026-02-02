@@ -12,7 +12,7 @@
         <a
           class="font-bold text-active"
           href="https://github.com/flipped-aurora/gin-vue-admin"
-          >Gin-Vue-Admin</a
+          >LoRAForge</a
         >
       </span>
     </div>
