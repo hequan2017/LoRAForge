@@ -13,12 +13,13 @@ func (s *InstanceRouter) InitInstanceRouter(Router *gin.RouterGroup, PublicRoute
 	instRouterWithoutRecord := Router.Group("inst")
 	instRouterWithoutAuth := PublicRouter.Group("inst")
 	{
-		instRouter.POST("createInstance", instApi.CreateInstance)             // 新建实例管理
-		instRouter.POST("startInstance", instApi.StartInstance)               // 启动实例
-		instRouter.POST("closeInstance", instApi.CloseInstance)               // 关闭实例
-		instRouter.POST("restartInstance", instApi.RestartInstance)           // 重启实例
-		instRouter.POST("syncInstances", instApi.SyncInstances)               // 同步实例
-		instRouter.DELETE("deleteInstance", instApi.DeleteInstance)           // 删除实例管理
+		instRouter.POST("createInstance", instApi.CreateInstance)              // 新建实例管理
+		instRouter.POST("startInstance", instApi.StartInstance)                // 启动实例
+		instRouter.POST("closeInstance", instApi.CloseInstance)                // 关闭实例
+		instRouter.POST("restartInstance", instApi.RestartInstance)            // 重启实例
+		instRouter.POST("syncInstances", instApi.SyncInstances)                // 同步单个节点实例
+		instRouter.POST("syncAllCloudStatus", instApi.SyncAllCloudStatus)      // 同步所有云资源状态
+		instRouter.DELETE("deleteInstance", instApi.DeleteInstance)            // 删除实例管理
 		instRouter.DELETE("deleteInstanceByIds", instApi.DeleteInstanceByIds) // 批量删除实例管理
 		instRouter.PUT("updateInstance", instApi.UpdateInstance)              // 更新实例管理
 	}
@@ -26,6 +27,7 @@ func (s *InstanceRouter) InitInstanceRouter(Router *gin.RouterGroup, PublicRoute
 		instRouterWithoutRecord.GET("findInstance", instApi.FindInstance)       // 根据ID获取实例管理
 		instRouterWithoutRecord.GET("getInstanceList", instApi.GetInstanceList) // 获取实例管理列表
 		instRouterWithoutRecord.GET("webssh", instApi.WebSSH)                   // WebSSH 终端连接
+		instRouterWithoutRecord.GET("logs", instApi.ContainerLogs)              // 容器日志连接
 	}
 	{
 		instRouterWithoutAuth.GET("getInstanceDataSource", instApi.GetInstanceDataSource) // 获取实例管理数据源

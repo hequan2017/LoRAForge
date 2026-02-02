@@ -87,12 +87,20 @@ func OperationRecord() gin.HandlerFunc {
 			ResponseWriter: c.Writer,
 			body:           &bytes.Buffer{},
 		}
+
+		// WebSocket 协议升级请求不应被 OperationRecord 中间件拦截其 ResponseWriter
+		// 因为 WebSocket 升级需要 Hijack 连接，而 responseBodyWriter 不支持 Hijack
+		if strings.ToLower(c.Request.Header.Get("Upgrade")) == "websocket" {
+			c.Next()
+			return
+		}
+
 		c.Writer = writer
 		now := time.Now()
 
 		c.Next()
 
-		latency := time.Since(now)
+		latency := time.Now().Sub(now)
 		record.ErrorMessage = c.Errors.ByType(gin.ErrorTypePrivate).String()
 		record.Status = c.Writer.Status()
 		record.Latency = latency

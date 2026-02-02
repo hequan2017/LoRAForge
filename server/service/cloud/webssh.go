@@ -20,7 +20,7 @@ import (
 )
 
 var wsUpgrader = websocket.Upgrader{
-	ReadBufferSize:   1024,
+	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	// 允许所有来源，生产环境应该限制
 	CheckOrigin: func(r *http.Request) bool {
@@ -30,10 +30,10 @@ var wsUpgrader = websocket.Upgrader{
 
 // WSMessage WebSocket 消息结构
 type WSMessage struct {
-	Type  string `json:"type"`  // resize, input, ping
-	Cols  uint16 `json:"cols"`  // 终端列数
-	Rows  uint16 `json:"rows"`  // 终端行数
-	Data  string `json:"data"`  // 输入数据
+	Type string `json:"type"` // resize, input, ping
+	Cols uint16 `json:"cols"` // 终端列数
+	Rows uint16 `json:"rows"` // 终端行数
+	Data string `json:"data"` // 输入数据
 }
 
 // ContainerSSHSession 容器 SSH 会话
@@ -53,7 +53,7 @@ type ContainerSSHSession struct {
 
 // 会话管理器 - 用于跟踪活跃的 SSH 会话
 var (
-	sessionMutex sync.RWMutex
+	sessionMutex   sync.RWMutex
 	activeSessions = make(map[string]*ContainerSSHSession)
 )
 
@@ -86,9 +86,9 @@ func GetActiveSessions() []map[string]interface{} {
 	var sessions []map[string]interface{}
 	for id, sess := range activeSessions {
 		sessions = append(sessions, map[string]interface{}{
-			"sessionID":  id,
+			"sessionID":   id,
 			"containerID": sess.ContainerID,
-			"createdAt":  sess.CreatedAt,
+			"createdAt":   sess.CreatedAt,
 			"lastActive":  sess.LastActive,
 		})
 	}
@@ -153,7 +153,7 @@ func (instService *InstanceService) WebSSHHandle(instanceID string, conn *websoc
 	}
 
 	// 4. 创建 Docker Client
-	cli, err := createDockerClient(node)
+	cli, err := CreateDockerClient(node)
 	if err != nil {
 		return fmt.Errorf("创建 Docker 客户端失败: %v", err)
 	}
@@ -240,7 +240,7 @@ func (instService *InstanceService) WebSSHHandle(instanceID string, conn *websoc
 // handleSessionWithMessage 处理 WebSocket 会话（带消息处理）
 func (instService *InstanceService) handleSessionWithMessage(session *ContainerSSHSession) error {
 	var wg sync.WaitGroup
-	wg.Add(3) // 输入、输出、消息处理
+	wg.Add(2) // 输入/消息处理、输出
 
 	// 消息处理 goroutine
 	go func() {
@@ -255,10 +255,11 @@ func (instService *InstanceService) handleSessionWithMessage(session *ContainerS
 	}()
 
 	// WebSocket 输入 -> 容器
-	go func() {
-		defer wg.Done()
-		instService.forwardInput(session)
-	}()
+	// 注意：输入处理已合并到 handleMessages 中，避免并发读取 WebSocket 导致的竞争问题
+	// go func() {
+	// 	defer wg.Done()
+	// 	instService.forwardInput(session)
+	// }()
 
 	// 等待任一方向结束
 	wg.Wait()
@@ -302,11 +303,12 @@ func (instService *InstanceService) handleMessages(session *ContainerSSHSession)
 
 			// 解析消息
 			var wsMsg WSMessage
-			if err := json.Unmarshal(message, &wsMsg); err == nil {
-				// JSON 消息（resize 等）
+			// 尝试解析为 JSON
+			if err := json.Unmarshal(message, &wsMsg); err == nil && (wsMsg.Type == "resize" || wsMsg.Type == "ping") {
+				// JSON 消息（resize, ping 等）
 				switch wsMsg.Type {
 				case "resize":
-					instService.handleResize(session, wsMsg.Cols, wsMsg.Rows)
+					instService.handleResize(session, wsMsg.Rows, wsMsg.Cols)
 				case "ping":
 					// 响应 pong
 					session.Conn.WriteMessage(websocket.PongMessage, nil)
@@ -421,7 +423,7 @@ func StartCleanupTimer() {
 	ticker := time.NewTicker(5 * time.Minute)
 	go func() {
 		for range ticker.C {
-		cleanupInactiveSessions()
-	}
+			cleanupInactiveSessions()
+		}
 	}()
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/cloud"
 	cloudReq "github.com/flipped-aurora/gin-vue-admin/server/model/cloud/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/task"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -146,6 +147,24 @@ func (instApi *InstanceApi) SyncInstances(c *gin.Context) {
 		return
 	}
 	response.OkWithMessage("同步成功", c)
+}
+
+// SyncAllCloudStatus 同步所有云资源状态
+// @Tags Instance
+// @Summary 同步所有云资源状态（容器+镜像）
+// @Security ApiKeyAuth
+// @Accept application/json
+// @Produce application/json
+// @Success 200 {object} response.Response{msg=string} "同步成功"
+// @Router /inst/syncAllCloudStatus [post]
+func (instApi *InstanceApi) SyncAllCloudStatus(c *gin.Context) {
+	err := task.SyncAllCloudStatus()
+	if err != nil {
+		global.GVA_LOG.Error("全局同步失败!", zap.Error(err))
+		response.FailWithMessage("全局同步失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("全局同步成功", c)
 }
 
 // DeleteInstance 删除实例管理

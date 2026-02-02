@@ -42,6 +42,9 @@ func SetToken(c *gin.Context, token string, maxAge int) {
 func GetToken(c *gin.Context) string {
 	token := c.Request.Header.Get("x-token")
 	if token == "" {
+		token = c.Query("x-token")
+	}
+	if token == "" {
 		j := NewJWT()
 		token, _ = c.Cookie("x-token")
 		claims, err := j.ParseToken(token)

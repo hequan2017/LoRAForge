@@ -12,6 +12,12 @@ import (
 // CasbinHandler 拦截器
 func CasbinHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 检查是否为WebSocket升级请求，如果是则放行
+		if strings.ToLower(c.Request.Header.Get("Upgrade")) == "websocket" {
+			c.Next()
+			return
+		}
+
 		waitUse, _ := utils.GetClaims(c)
 		//获取请求的PATH
 		path := c.Request.URL.Path

@@ -121,6 +121,7 @@
         <el-table-column align="left" label="操作" fixed="right" :min-width="appStore.operateMinWith">
             <template #default="scope">
             <el-button  type="success" link class="table-button" @click="openTerminal(scope.row)"><el-icon style="margin-right: 5px"><Monitor /></el-icon>终端</el-button>
+            <el-button  type="info" link class="table-button" @click="openLog(scope.row)"><el-icon style="margin-right: 5px"><Document /></el-icon>日志</el-button>
             <el-button  type="primary" link class="table-button" @click="getDetails(scope.row)"><el-icon style="margin-right: 5px"><InfoFilled /></el-icon>查看</el-button>
             <el-button  type="primary" link icon="edit" class="table-button" @click="updateInstanceFunc(scope.row)">编辑</el-button>
             <el-button   type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
@@ -374,6 +375,34 @@
         </div>
     </el-dialog>
 
+    <!-- 容器日志弹窗 -->
+    <el-dialog
+        v-model="logVisible"
+        :fullscreen="false"
+        :show-close="true"
+        @close="closeLog"
+        class="terminal-dialog"
+        width="90%"
+        destroy-on-close>
+        <template #header>
+            <div class="flex justify-between items-center w-full">
+                <span class="text-lg font-semibold">
+                    <el-icon class="mr-2"><Document /></el-icon>
+                    容器日志 - {{ currentInstance?.instanceName || '容器' }}
+                </span>
+                <el-tag v-if="currentInstance" size="small" type="success">
+                    {{ currentInstance.containerStatus === 'Running' ? '运行中' : currentInstance.containerStatus }}
+                </el-tag>
+            </div>
+        </template>
+        <div class="terminal-wrapper">
+            <WebLog
+                v-if="logVisible && logUrl"
+                :url="logUrl"
+                :title="currentInstance?.instanceName || 'Logs'" />
+        </div>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -473,9 +502,10 @@ const terminalUrl = computed(() => {
   // 获取当前主机的协议和主机名
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
+  const baseUrl = import.meta.env.VITE_BASE_API || ''
 
   // 构建 WebSocket URL
-  return `${protocol}//${host}/inst/webssh?id=${currentInstance.value.ID}&x-token=${userStore.token}`
+  return `${protocol}//${host}${baseUrl}/inst/webssh?id=${currentInstance.value.ID}&x-token=${encodeURIComponent(userStore.token)}`
 })
 
 // 打开终端

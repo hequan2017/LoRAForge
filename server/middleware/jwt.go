@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -66,7 +67,15 @@ func JWTAuth() gin.HandlerFunc {
 				_ = utils.SetRedisJWT(newToken, newClaims.Username)
 			}
 		}
+
+		// WebSocket 连接不需要处理响应头中的 new-token，且 c.Next() 后不能再操作 Header (如果已经 Hijack)
+		// 所以直接调用 c.Next() 即可
 		c.Next()
+
+		// 如果是 WebSocket 升级请求，c.Next() 返回时连接可能已经 Hijack，不能再设置 Header
+		if strings.ToLower(c.Request.Header.Get("Upgrade")) == "websocket" {
+			return
+		}
 
 		if newToken, exists := c.Get("new-token"); exists {
 			c.Header("new-token", newToken.(string))

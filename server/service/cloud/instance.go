@@ -60,7 +60,7 @@ func (instService *InstanceService) CreateInstance(ctx context.Context, inst *cl
 	global.GVA_LOG.Info("获取到镜像信息", zap.String("mirror", *mirror.Address))
 
 	// 3. 创建 Docker Client
-	cli, err := createDockerClient(node)
+	cli, err := CreateDockerClient(node)
 	if err != nil {
 		global.GVA_LOG.Error("创建Docker客户端失败", zap.Error(err))
 		return fmt.Errorf("创建 Docker 客户端失败: %v", err)
@@ -280,7 +280,8 @@ func (instService *InstanceService) CreateInstance(ctx context.Context, inst *cl
 	return err
 }
 
-func createDockerClient(node cloud.ComputeNode) (*client.Client, error) {
+// CreateDockerClient 创建 Docker 客户端 (公开函数，供外部调用)
+func CreateDockerClient(node cloud.ComputeNode) (*client.Client, error) {
 	host := ""
 	if node.DockerConnectAddress != nil {
 		host = *node.DockerConnectAddress
@@ -351,7 +352,7 @@ func (instService *InstanceService) SyncInstances(ctx context.Context, nodeID in
 	}
 
 	// 2. 创建 Docker Client
-	cli, err := createDockerClient(node)
+	cli, err := CreateDockerClient(node)
 	if err != nil {
 		return fmt.Errorf("创建 Docker 客户端失败: %v", err)
 	}
@@ -446,7 +447,7 @@ func (instService *InstanceService) CloseInstance(ctx context.Context, inst *clo
 	}
 
 	// 3. 创建 Docker Client
-	cli, err := createDockerClient(node)
+	cli, err := CreateDockerClient(node)
 	if err != nil {
 		return fmt.Errorf("创建 Docker 客户端失败: %v", err)
 	}
@@ -486,7 +487,7 @@ func (instService *InstanceService) RestartInstance(ctx context.Context, inst *c
 	}
 
 	// 3. 创建 Docker Client
-	cli, err := createDockerClient(node)
+	cli, err := CreateDockerClient(node)
 	if err != nil {
 		return fmt.Errorf("创建 Docker 客户端失败: %v", err)
 	}
@@ -524,7 +525,7 @@ func (instService *InstanceService) StartInstance(ctx context.Context, inst *clo
 	}
 
 	// 3. 创建 Docker Client
-	cli, err := createDockerClient(node)
+	cli, err := CreateDockerClient(node)
 	if err != nil {
 		return fmt.Errorf("创建 Docker 客户端失败: %v", err)
 	}
