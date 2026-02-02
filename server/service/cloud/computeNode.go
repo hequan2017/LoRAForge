@@ -55,6 +55,21 @@ func (nodeService *ComputeNodeService)GetComputeNodeInfoList(ctx context.Context
     if len(info.CreatedAtRange) == 2 {
      db = db.Where("created_at BETWEEN ? AND ?", info.CreatedAtRange[0], info.CreatedAtRange[1])
     }
+    if info.Name != "" {
+        db = db.Where("name LIKE ?", "%"+info.Name+"%")
+    }
+    if info.Region != "" {
+        db = db.Where("region LIKE ?", "%"+info.Region+"%")
+    }
+    if info.PublicIp != "" {
+        db = db.Where("public_ip LIKE ?", "%"+info.PublicIp+"%")
+    }
+    if info.GpuName != "" {
+        db = db.Where("gpu_name LIKE ?", "%"+info.GpuName+"%")
+    }
+    if info.IsListed != nil {
+        db = db.Where("is_listed = ?", *info.IsListed)
+    }
     
 	err = db.Count(&total).Error
 	if err!=nil {

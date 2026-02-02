@@ -22,6 +22,18 @@
             end-placeholder="结束时间"
           />
        </el-form-item>
+        <el-form-item label="名称" prop="name">
+             <el-input v-model="searchInfo.name" placeholder="搜索名称" />
+        </el-form-item>
+        <el-form-item label="显卡型号" prop="gpuModel">
+             <el-input v-model="searchInfo.gpuModel" placeholder="搜索显卡型号" />
+        </el-form-item>
+        <el-form-item label="是否上架" prop="isListed">
+             <el-select v-model="searchInfo.isListed" placeholder="请选择" clearable>
+                <el-option label="是" :value="true" />
+                <el-option label="否" :value="false" />
+             </el-select>
+        </el-form-item>
       
 
         <template v-if="showAllQuery">

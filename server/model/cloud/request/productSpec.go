@@ -8,5 +8,8 @@ import (
 
 type ProductSpecSearch struct{
     CreatedAtRange []time.Time `json:"createdAtRange" form:"createdAtRange[]"`
+    Name           string      `json:"name" form:"name"`
+    GpuModel       string      `json:"gpuModel" form:"gpuModel"`
+    IsListed       *bool       `json:"isListed" form:"isListed"`
     request.PageInfo
 }

@@ -55,6 +55,15 @@ func (mirrorService *MirrorRepositoryService)GetMirrorRepositoryInfoList(ctx con
     if len(info.CreatedAtRange) == 2 {
      db = db.Where("created_at BETWEEN ? AND ?", info.CreatedAtRange[0], info.CreatedAtRange[1])
     }
+    if info.Name != "" {
+        db = db.Where("name LIKE ?", "%"+info.Name+"%")
+    }
+    if info.Source != "" {
+        db = db.Where("source LIKE ?", "%"+info.Source+"%")
+    }
+    if info.IsListed != nil {
+        db = db.Where("is_listed = ?", *info.IsListed)
+    }
     
 	err = db.Count(&total).Error
 	if err!=nil {

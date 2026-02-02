@@ -1,6 +1,6 @@
 # LoRAForge (锻造)
 
-基于 Gin-Vue-Admin 框架开发的云资源管理系统。
+基于 Gin-Vue-Admin 2.8.9 框架开发的云资源管理系统。
 
 ## 📌 项目简介
 

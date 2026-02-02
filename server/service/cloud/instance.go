@@ -75,6 +75,18 @@ func (instService *InstanceService) GetInstanceInfoList(ctx context.Context, inf
 	if len(info.CreatedAtRange) == 2 {
 		db = db.Where("created_at BETWEEN ? AND ?", info.CreatedAtRange[0], info.CreatedAtRange[1])
 	}
+    if info.InstanceName != "" {
+        db = db.Where("instance_name LIKE ?", "%"+info.InstanceName+"%")
+    }
+    if info.MirrorId != nil {
+        db = db.Where("mirror_id = ?", *info.MirrorId)
+    }
+    if info.TemplateId != nil {
+        db = db.Where("template_id = ?", *info.TemplateId)
+    }
+    if info.NodeId != nil {
+        db = db.Where("node_id = ?", *info.NodeId)
+    }
 
 	err = db.Count(&total).Error
 	if err != nil {

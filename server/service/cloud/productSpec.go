@@ -55,6 +55,15 @@ func (specService *ProductSpecService)GetProductSpecInfoList(ctx context.Context
     if len(info.CreatedAtRange) == 2 {
      db = db.Where("created_at BETWEEN ? AND ?", info.CreatedAtRange[0], info.CreatedAtRange[1])
     }
+    if info.Name != "" {
+        db = db.Where("name LIKE ?", "%"+info.Name+"%")
+    }
+    if info.GpuModel != "" {
+        db = db.Where("gpu_model LIKE ?", "%"+info.GpuModel+"%")
+    }
+    if info.IsListed != nil {
+        db = db.Where("is_listed = ?", *info.IsListed)
+    }
     
 	err = db.Count(&total).Error
 	if err!=nil {

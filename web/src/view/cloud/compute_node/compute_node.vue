@@ -22,6 +22,24 @@
             end-placeholder="结束时间"
           />
        </el-form-item>
+        <el-form-item label="名字" prop="name">
+             <el-input v-model="searchInfo.name" placeholder="搜索名字" />
+        </el-form-item>
+        <el-form-item label="区域" prop="region">
+             <el-input v-model="searchInfo.region" placeholder="搜索区域" />
+        </el-form-item>
+        <el-form-item label="公网IP" prop="publicIp">
+             <el-input v-model="searchInfo.publicIp" placeholder="搜索公网IP" />
+        </el-form-item>
+        <el-form-item label="显卡名称" prop="gpuName">
+             <el-input v-model="searchInfo.gpuName" placeholder="搜索显卡名称" />
+        </el-form-item>
+        <el-form-item label="是否上架" prop="isListed">
+             <el-select v-model="searchInfo.isListed" placeholder="请选择" clearable>
+                <el-option label="是" :value="true" />
+                <el-option label="否" :value="false" />
+             </el-select>
+        </el-form-item>
       
 
         <template v-if="showAllQuery">
