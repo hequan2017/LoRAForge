@@ -94,6 +94,60 @@ func (instApi *InstanceApi) RestartInstance(c *gin.Context) {
 	response.OkWithMessage("重启成功", c)
 }
 
+// StartInstance 启动实例
+// @Tags Instance
+// @Summary 启动实例
+// @Security ApiKeyAuth
+// @Accept application/json
+// @Produce application/json
+// @Param data body cloud.Instance true "启动实例"
+// @Success 200 {object} response.Response{msg=string} "启动成功"
+// @Router /inst/startInstance [post]
+func (instApi *InstanceApi) StartInstance(c *gin.Context) {
+	var inst cloud.Instance
+	err := c.ShouldBindJSON(&inst)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	err = instService.StartInstance(c.Request.Context(), &inst)
+	if err != nil {
+		global.GVA_LOG.Error("启动失败!", zap.Error(err))
+		response.FailWithMessage("启动失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("启动成功", c)
+}
+
+// SyncInstances 同步实例
+// @Tags Instance
+// @Summary 同步实例
+// @Security ApiKeyAuth
+// @Accept application/json
+// @Produce application/json
+// @Param data body cloud.Instance true "同步实例，只需nodeId"
+// @Success 200 {object} response.Response{msg=string} "同步成功"
+// @Router /inst/syncInstances [post]
+func (instApi *InstanceApi) SyncInstances(c *gin.Context) {
+	var inst cloud.Instance
+	err := c.ShouldBindJSON(&inst)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if inst.NodeID == nil {
+		response.FailWithMessage("NodeID is required", c)
+		return
+	}
+	err = instService.SyncInstances(c.Request.Context(), *inst.NodeID)
+	if err != nil {
+		global.GVA_LOG.Error("同步失败!", zap.Error(err))
+		response.FailWithMessage("同步失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithMessage("同步成功", c)
+}
+
 // DeleteInstance 删除实例管理
 // @Tags Instance
 // @Summary 删除实例管理

@@ -95,6 +95,22 @@ export const getInstanceList = (params) => {
   })
 }
 // @Tags Instance
+// @Summary 同步实例
+// @Security ApiKeyAuth
+// @Accept application/json
+// @Produce application/json
+// @Param data body model.Instance true "同步实例"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"同步成功"}"
+// @Router /inst/syncInstances [post]
+export const syncInstances = (data) => {
+  return service({
+    url: '/inst/syncInstances',
+    method: 'post',
+    data
+  })
+}
+
+// @Tags Instance
 // @Summary 获取数据源
 // @Security ApiKeyAuth
 // @Accept application/json
@@ -119,6 +135,14 @@ export const getInstancePublic = () => {
   return service({
     url: '/inst/getInstancePublic',
     method: 'get',
+  })
+}
+
+export const startInstance = (data) => {
+  return service({
+    url: '/inst/startInstance',
+    method: 'post',
+    data
   })
 }
 

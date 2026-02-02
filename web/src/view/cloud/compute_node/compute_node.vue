@@ -268,7 +268,6 @@
                     </el-descriptions-item>
             </el-descriptions>
         </el-drawer>
-
   </div>
 </template>
 
