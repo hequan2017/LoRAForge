@@ -45,9 +45,10 @@
        </el-form-item>
        <el-form-item label="容器状态" prop="containerStatus">
             <el-select v-model="searchInfo.containerStatus" placeholder="请选择状态" clearable>
-                <el-option label="运行中" value="Running" />
-                <el-option label="已关闭" value="Closed" />
-                <el-option label="已停止" value="Stopped" />
+                <el-option label="运行中" value="运行中" />
+                <el-option label="已停止" value="已停止" />
+                <el-option label="已暂停" value="已暂停" />
+                <el-option label="重启中" value="重启中" />
             </el-select>
        </el-form-item>
        </template>
@@ -111,9 +112,10 @@
 
             <el-table-column align="left" label="状态" prop="containerStatus" width="100">
                 <template #default="scope">
-                    <el-tag v-if="scope.row.containerStatus === 'Running'" type="success">运行中</el-tag>
-                    <el-tag v-else-if="scope.row.containerStatus === 'Closed'" type="info">已关闭</el-tag>
-                    <el-tag v-else-if="scope.row.containerStatus === 'Stopped'" type="danger">已停止</el-tag>
+                    <el-tag v-if="scope.row.containerStatus === '运行中'" type="success">运行中</el-tag>
+                    <el-tag v-else-if="scope.row.containerStatus === '已停止'" type="info">已停止</el-tag>
+                    <el-tag v-else-if="scope.row.containerStatus === '已暂停'" type="warning">已暂停</el-tag>
+                    <el-tag v-else-if="scope.row.containerStatus === '重启中'" type="warning">重启中</el-tag>
                     <el-tag v-else type="info">{{ scope.row.containerStatus || '未知' }}</el-tag>
                 </template>
             </el-table-column>
@@ -297,9 +299,10 @@
                     {{ filterDataSource(dataSource.templateId,detailForm.templateId) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="容器状态">
-                    <el-tag v-if="detailForm.containerStatus === 'Running'" type="success" size="small">运行中</el-tag>
-                    <el-tag v-else-if="detailForm.containerStatus === 'Closed'" type="info" size="small">已关闭</el-tag>
-                    <el-tag v-else-if="detailForm.containerStatus === 'Stopped'" type="danger" size="small">已停止</el-tag>
+                    <el-tag v-if="detailForm.containerStatus === '运行中'" type="success" size="small">运行中</el-tag>
+                    <el-tag v-else-if="detailForm.containerStatus === '已停止'" type="info" size="small">已停止</el-tag>
+                    <el-tag v-else-if="detailForm.containerStatus === '已暂停'" type="warning" size="small">已暂停</el-tag>
+                    <el-tag v-else-if="detailForm.containerStatus === '重启中'" type="warning" size="small">重启中</el-tag>
                     <el-tag v-else type="info" size="small">{{ detailForm.containerStatus || '未知' }}</el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item label="Docker容器ID" :span="2">
@@ -357,7 +360,7 @@
                     Web终端 - {{ currentInstance?.instanceName || '容器' }}
                 </span>
                 <el-tag v-if="currentInstance" size="small" type="success">
-                    {{ currentInstance.containerStatus === 'Running' ? '运行中' : currentInstance.containerStatus }}
+                    {{ currentInstance.containerStatus || '未知' }}
                 </el-tag>
             </div>
         </template>
@@ -369,8 +372,8 @@
                 @connected="onTerminalConnected"
                 @disconnected="onTerminalDisconnected"
                 @error="onTerminalError" />
-            <div v-else-if="!currentInstance || currentInstance.containerStatus !== 'Running'" class="flex items-center justify-center h-full">
-                <el-empty description="容器状态不是运行中，无法连接终端" />
+            <div v-else-if="!currentInstance" class="flex items-center justify-center h-full">
+                <el-empty description="未选择实例" />
             </div>
         </div>
     </el-dialog>
@@ -391,7 +394,7 @@
                     容器日志 - {{ currentInstance?.instanceName || '容器' }}
                 </span>
                 <el-tag v-if="currentInstance" size="small" type="success">
-                    {{ currentInstance.containerStatus === 'Running' ? '运行中' : currentInstance.containerStatus }}
+                    {{ currentInstance.containerStatus || '未知' }}
                 </el-tag>
             </div>
         </template>
@@ -510,9 +513,8 @@ const terminalUrl = computed(() => {
 
 // 打开终端
 const openTerminal = (row) => {
-  if (row.containerStatus !== 'Running') {
-    ElMessage.warning('容器状态不是运行中，无法连接终端')
-    return
+  if (row.containerStatus !== '运行中') {
+     ElMessage.warning('容器状态可能不是运行中，尝试连接...')
   }
   currentInstance.value = row
   terminalVisible.value = true

@@ -273,7 +273,7 @@ func (instService *InstanceService) CreateInstance(ctx context.Context, inst *cl
 	}
 
 	inst.DockerContainer = &shortID
-	status := "Running"
+	status := "运行中"
 	inst.ContainerStatus = &status
 
 	err = global.GVA_DB.Create(inst).Error
@@ -389,6 +389,8 @@ func (instService *InstanceService) SyncInstances(ctx context.Context, nodeID in
 		}
 
 		status := c.State
+		// 将 Docker 状态转换为中文
+		status = formatContainerStatus(status)
 		name := ""
 		if len(c.Names) > 0 {
 			name = strings.TrimPrefix(c.Names[0], "/")
@@ -462,7 +464,7 @@ func (instService *InstanceService) CloseInstance(ctx context.Context, inst *clo
 	}
 
 	// 5. 更新数据库状态
-	status := "Stopped"
+	status := "已停止"
 	return global.GVA_DB.Model(&cloud.Instance{}).Where("id = ?", inst.ID).Update("container_status", status).Error
 }
 
@@ -500,7 +502,7 @@ func (instService *InstanceService) RestartInstance(ctx context.Context, inst *c
 	}
 
 	// 5. 更新数据库状态
-	status := "Running"
+	status := "运行中"
 	return global.GVA_DB.Model(&cloud.Instance{}).Where("id = ?", inst.ID).Update("container_status", status).Error
 }
 
@@ -538,7 +540,7 @@ func (instService *InstanceService) StartInstance(ctx context.Context, inst *clo
 	}
 
 	// 5. 更新数据库状态
-	status := "Running"
+	status := "运行中"
 	return global.GVA_DB.Model(&cloud.Instance{}).Where("id = ?", inst.ID).Update("container_status", status).Error
 }
 
@@ -627,4 +629,27 @@ func (instService *InstanceService) GetInstanceDataSource(ctx context.Context) (
 func (instService *InstanceService) GetInstancePublic(ctx context.Context) {
 	// 此方法为获取数据源定义的数据
 	// 请自行实现
+}
+
+// formatContainerStatus 将 Docker 容器状态转换为中文
+// 支持的 Docker 状态：running, exited, paused, restarting, dead, created, removing
+func formatContainerStatus(status string) string {
+	// 统一转为小写进行比较
+	switch strings.ToLower(status) {
+	case "running":
+		return "运行中"
+	case "exited", "dead":
+		return "已停止"
+	case "paused":
+		return "已暂停"
+	case "restarting":
+		return "重启中"
+	case "created":
+		return "已创建"
+	case "removing":
+		return "删除中"
+	default:
+		// 未知状态返回原始值
+		return status
+	}
 }

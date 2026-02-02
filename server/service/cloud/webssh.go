@@ -136,10 +136,11 @@ func (instService *InstanceService) WebSSHHandle(instanceID string, conn *websoc
 		return fmt.Errorf("获取实例信息失败: %v", err)
 	}
 
-	// 2. 检查容器状态
-	if inst.ContainerStatus == nil || *inst.ContainerStatus != "Running" {
-		return fmt.Errorf("容器状态不是运行中，无法连接（当前状态: %s）",
-			safeString(inst.ContainerStatus))
+	// 2. 检查容器状态 (仅作日志记录，不强制阻断，交由 Docker API 判断)
+	if inst.ContainerStatus != nil && *inst.ContainerStatus != "运行中" {
+		global.GVA_LOG.Warn("尝试连接非运行状态容器",
+			zap.String("status", *inst.ContainerStatus),
+			zap.String("instanceID", instanceID))
 	}
 
 	if inst.DockerContainer == nil || *inst.DockerContainer == "" {
