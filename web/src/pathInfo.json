@@ -1,5 +1,13 @@
 {
   "/src/view/about/index.vue": "About",
+  "/src/view/cloud/compute_node/compute_node.vue": "ComputeNode",
+  "/src/view/cloud/compute_node/compute_nodeForm.vue": "ComputeNodeForm",
+  "/src/view/cloud/instance/instance.vue": "Instance",
+  "/src/view/cloud/instance/instanceForm.vue": "InstanceForm",
+  "/src/view/cloud/mirror_repository/mirror_repository.vue": "MirrorRepository",
+  "/src/view/cloud/mirror_repository/mirror_repositoryForm.vue": "MirrorRepositoryForm",
+  "/src/view/cloud/product_spec/product_spec.vue": "ProductSpec",
+  "/src/view/cloud/product_spec/product_specForm.vue": "ProductSpecForm",
   "/src/view/dashboard/components/banner.vue": "Banner",
   "/src/view/dashboard/components/card.vue": "Card",
   "/src/view/dashboard/components/charts-content-numbers.vue": "ChartsContentNumbers",

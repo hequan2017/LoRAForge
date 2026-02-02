@@ -23,28 +23,27 @@
           />
        </el-form-item>
         <el-form-item label="实例名称" prop="instanceName">
-             <el-input v-model="searchInfo.instanceName" placeholder="搜索实例名称" />
-        </el-form-item>
-        <el-form-item label="镜像" prop="mirrorId">
-             <el-select v-model="searchInfo.mirrorId" placeholder="请选择镜像" filterable clearable>
-                 <el-option v-for="(item,key) in dataSource.mirrorId" :key="key" :label="item.label" :value="item.value" />
-             </el-select>
-        </el-form-item>
-        <el-form-item label="模版" prop="templateId">
-             <el-select v-model="searchInfo.templateId" placeholder="请选择模版" filterable clearable>
-                 <el-option v-for="(item,key) in dataSource.templateId" :key="key" :label="item.label" :value="item.value" />
-             </el-select>
-        </el-form-item>
-        <el-form-item label="节点" prop="nodeId">
-             <el-select v-model="searchInfo.nodeId" placeholder="请选择节点" filterable clearable>
-                 <el-option v-for="(item,key) in dataSource.nodeId" :key="key" :label="item.label" :value="item.value" />
-             </el-select>
-        </el-form-item>
-      
-
-        <template v-if="showAllQuery">
-          <!-- 将需要控制显示状态的查询条件添加到此范围内 -->
-        </template>
+            <el-input v-model="searchInfo.instanceName" placeholder="搜索实例名称" />
+       </el-form-item>
+       
+       <template v-if="showAllQuery">
+       <!-- 将需要控制显示状态的查询条件添加到此范围内 -->
+       <el-form-item label="镜像" prop="mirrorId">
+            <el-select v-model="searchInfo.mirrorId" placeholder="请选择镜像" filterable clearable>
+                <el-option v-for="(item,key) in dataSource.mirrorId" :key="key" :label="item.label" :value="item.value" />
+            </el-select>
+       </el-form-item>
+       <el-form-item label="模版" prop="templateId">
+            <el-select v-model="searchInfo.templateId" placeholder="请选择模版" filterable clearable>
+                <el-option v-for="(item,key) in dataSource.templateId" :key="key" :label="item.label" :value="item.value" />
+            </el-select>
+       </el-form-item>
+       <el-form-item label="节点" prop="nodeId">
+            <el-select v-model="searchInfo.nodeId" placeholder="请选择节点" filterable clearable>
+                <el-option v-for="(item,key) in dataSource.nodeId" :key="key" :label="item.label" :value="item.value" />
+            </el-select>
+       </el-form-item>
+       </template>
 
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
