@@ -25,6 +25,7 @@ rm_file/
 /server/log/
 /server/gva
 /server/server
+/server/server.exe
 /server/latest_log
 /server/__debug_bin*
 /server/*.local.yaml
