@@ -30,9 +30,9 @@ func (instService *InstanceService) CreateInstance(ctx context.Context, inst *cl
 	global.GVA_LOG.Info("开始创建实例请求", zap.Any("instance", inst))
 
 	// 0. 验证必填字段
-	if inst.MirrorID == nil || *inst.MirrorID == 0 {
-		global.GVA_LOG.Error("镜像ID不能为空")
-		return fmt.Errorf("镜像ID不能为空")
+	if (inst.MirrorID == nil || *inst.MirrorID == 0) && (inst.ImageName == nil || *inst.ImageName == "") {
+		global.GVA_LOG.Error("镜像不能为空")
+		return fmt.Errorf("镜像不能为空")
 	}
 	if inst.NodeID == nil || *inst.NodeID == 0 {
 		global.GVA_LOG.Error("节点ID不能为空")
@@ -51,13 +51,19 @@ func (instService *InstanceService) CreateInstance(ctx context.Context, inst *cl
 	}
 	global.GVA_LOG.Info("获取到计算节点", zap.String("nodeName", *node.Name))
 
-	// 2. 获取镜像信息
-	var mirror cloud.MirrorRepository
-	if err := global.GVA_DB.First(&mirror, inst.MirrorID).Error; err != nil {
-		global.GVA_LOG.Error("获取镜像信息失败", zap.Error(err))
-		return fmt.Errorf("未找到镜像: %v", err)
+	// 2. 获取镜像名称
+	var imageName string
+	if inst.ImageName != nil && *inst.ImageName != "" {
+		imageName = *inst.ImageName
+	} else if inst.MirrorID != nil && *inst.MirrorID != 0 {
+		// 兼容旧逻辑
+		var mirror cloud.MirrorRepository
+		if err := global.GVA_DB.First(&mirror, inst.MirrorID).Error; err != nil {
+			global.GVA_LOG.Error("获取镜像信息失败", zap.Error(err))
+			return fmt.Errorf("未找到镜像: %v", err)
+		}
+		imageName = *mirror.Address
 	}
-	global.GVA_LOG.Info("获取到镜像信息", zap.String("mirror", *mirror.Address))
 
 	// 3. 创建 Docker Client
 	cli, err := CreateDockerClient(node)
@@ -69,7 +75,6 @@ func (instService *InstanceService) CreateInstance(ctx context.Context, inst *cl
 	defer cli.Close()
 
 	// 4. 准备容器配置
-	imageName := *mirror.Address
 
 	global.GVA_LOG.Info("开始拉取镜像", zap.String("image", imageName))
 	// 尝试拉取镜像
@@ -364,7 +369,17 @@ func (instService *InstanceService) SyncInstances(ctx context.Context, nodeID in
 		return fmt.Errorf("获取容器列表失败: %v", err)
 	}
 
-	// 4. 同步数据库
+	// 4. 获取所有镜像库信息用于匹配
+	var mirrors []cloud.MirrorRepository
+	global.GVA_DB.Find(&mirrors)
+	mirrorMap := make(map[string]int64)
+	for _, m := range mirrors {
+		if m.Address != nil && *m.Address != "" {
+			mirrorMap[*m.Address] = int64(m.ID)
+		}
+	}
+
+	// 5. 同步数据库
 	// 获取该节点下已存在的实例记录
 	var existingInsts []cloud.Instance
 	global.GVA_DB.Where("node_id = ?", nodeID).Find(&existingInsts)
@@ -396,9 +411,76 @@ func (instService *InstanceService) SyncInstances(ctx context.Context, nodeID in
 			name = strings.TrimPrefix(c.Names[0], "/")
 		}
 
+		// 尝试匹配镜像
+		var mirrorID *int64
+		imageName := c.Image
+		// 尝试直接匹配 Image 字段 (如 nginx:latest)
+		if id, ok := mirrorMap[c.Image]; ok {
+			val := id
+			mirrorID = &val
+		}
+
+		// 获取容器详细信息以解析配置
+		var cpu float64
+		var memory int64
+		var gpuCount int64
+
+		inspect, err := cli.ContainerInspect(ctx, cID)
+		if err == nil {
+			// 解析 CPU (NanoCPUs)
+			if inspect.HostConfig.NanoCPUs > 0 {
+				cpu = float64(inspect.HostConfig.NanoCPUs) / 1e9
+			}
+
+			// 解析内存 (Bytes -> MB)
+			if inspect.HostConfig.Memory > 0 {
+				memory = inspect.HostConfig.Memory / 1024 / 1024
+			}
+
+			// 解析 GPU
+			// 1. 检查 DeviceRequests (新版 Docker)
+			if inspect.HostConfig.DeviceRequests != nil {
+				for _, req := range inspect.HostConfig.DeviceRequests {
+					// 简单判断：如果有 nvidia/gpu 相关的 request
+					if req.Count == -1 {
+						// all GPUs
+						if node.GPUCount != nil {
+							gpuCount = *node.GPUCount
+						}
+					} else {
+						gpuCount += int64(req.Count)
+					}
+				}
+			}
+			// 2. 检查环境变量 (旧版或特定镜像)
+			for _, env := range inspect.Config.Env {
+				if strings.HasPrefix(env, "NVIDIA_VISIBLE_DEVICES=") {
+					val := strings.TrimPrefix(env, "NVIDIA_VISIBLE_DEVICES=")
+					if val == "all" {
+						if node.GPUCount != nil {
+							gpuCount = *node.GPUCount
+						}
+					} else if val != "none" && val != "" {
+						gpuCount = int64(len(strings.Split(val, ",")))
+					}
+				}
+			}
+		}
+
 		if inst, ok := existingMap[cID]; ok {
 			// 更新状态
 			inst.ContainerStatus = &status
+			// 更新镜像关联（如果找到）
+			if mirrorID != nil {
+				inst.MirrorID = mirrorID
+			}
+			// 更新镜像名称
+			inst.ImageName = &imageName
+			// 更新配置
+			inst.Cpu = &cpu
+			inst.Memory = &memory
+			inst.GpuCount = &gpuCount
+
 			// 也可以选择更新名称等其他信息
 			// inst.InstanceName = &name
 			global.GVA_DB.Save(inst)
@@ -418,8 +500,13 @@ func (instService *InstanceService) SyncInstances(ctx context.Context, nodeID in
 				NodeID:          &nodeID,
 				DockerContainer: &cID,
 				InstanceName:    &name,
+				MirrorID:        mirrorID,
+				ImageName:       &imageName,
 				ContainerStatus: &status,
 				PortMapping:     &portMapping,
+				Cpu:             &cpu,
+				Memory:          &memory,
+				GpuCount:        &gpuCount,
 				Remark:          utils.Pointer("系统自动同步"),
 			}
 			global.GVA_DB.Create(&newInst)
@@ -545,15 +632,65 @@ func (instService *InstanceService) StartInstance(ctx context.Context, inst *clo
 }
 
 // DeleteInstance 删除实例管理记录
-// Author [yourname](https://github.com/yourname)
 func (instService *InstanceService) DeleteInstance(ctx context.Context, ID string) (err error) {
+	// 1. 获取实例详情
+	var inst cloud.Instance
+	if err := global.GVA_DB.First(&inst, "id = ?", ID).Error; err != nil {
+		return fmt.Errorf("未找到实例: %v", err)
+	}
+
+	// 2. 尝试删除容器 (如果关联了容器)
+	if inst.NodeID != nil && inst.DockerContainer != nil && *inst.DockerContainer != "" {
+		// 获取节点信息
+		var node cloud.ComputeNode
+		if err := global.GVA_DB.First(&node, inst.NodeID).Error; err == nil {
+			// 创建 Docker Client
+			if cli, err := CreateDockerClient(node); err == nil {
+				defer cli.Close()
+				// 强制删除容器
+				if err := cli.ContainerRemove(ctx, *inst.DockerContainer, container.RemoveOptions{Force: true}); err != nil {
+					global.GVA_LOG.Warn("删除容器失败", zap.String("id", *inst.DockerContainer), zap.Error(err))
+				} else {
+					global.GVA_LOG.Info("容器删除成功", zap.String("id", *inst.DockerContainer))
+				}
+			} else {
+				global.GVA_LOG.Error("创建Docker客户端失败，无法删除容器", zap.Error(err))
+			}
+		}
+	}
+
 	err = global.GVA_DB.Delete(&cloud.Instance{}, "id = ?", ID).Error
 	return err
 }
 
 // DeleteInstanceByIds 批量删除实例管理记录
-// Author [yourname](https://github.com/yourname)
 func (instService *InstanceService) DeleteInstanceByIds(ctx context.Context, IDs []string) (err error) {
+	// 遍历删除容器
+	for _, id := range IDs {
+		var inst cloud.Instance
+		if err := global.GVA_DB.First(&inst, "id = ?", id).Error; err != nil {
+			continue
+		}
+
+		if inst.NodeID != nil && inst.DockerContainer != nil && *inst.DockerContainer != "" {
+			var node cloud.ComputeNode
+			if err := global.GVA_DB.First(&node, inst.NodeID).Error; err == nil {
+				if cli, err := CreateDockerClient(node); err == nil {
+					// 注意：在循环中 defer 会在函数结束时才执行，可能导致连接耗尽
+					// 但这里连接数应该不多。更严谨的做法是封装成匿名函数或显式 Close
+					func() {
+						defer cli.Close()
+						if err := cli.ContainerRemove(ctx, *inst.DockerContainer, container.RemoveOptions{Force: true}); err != nil {
+							global.GVA_LOG.Warn("删除容器失败", zap.String("id", *inst.DockerContainer), zap.Error(err))
+						} else {
+							global.GVA_LOG.Info("容器删除成功", zap.String("id", *inst.DockerContainer))
+						}
+					}()
+				}
+			}
+		}
+	}
+
 	err = global.GVA_DB.Delete(&[]cloud.Instance{}, "id in ?", IDs).Error
 	return err
 }

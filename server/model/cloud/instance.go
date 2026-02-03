@@ -8,7 +8,8 @@ import (
 // 实例管理 结构体  Instance
 type Instance struct {
 	global.GVA_MODEL
-	MirrorID        *int64  `json:"mirrorId" form:"mirrorId" gorm:"comment:镜像;column:mirror_id;"`               //镜像
+	MirrorID        *int64  `json:"mirrorId" form:"mirrorId" gorm:"comment:镜像;column:mirror_id;"`               //镜像(旧)
+	ImageName       *string `json:"imageName" form:"imageName" gorm:"comment:镜像名称;column:image_name;"`          //镜像名称(新)
 	TemplateID      *int64  `json:"templateId" form:"templateId" gorm:"comment:模版;column:template_id;"`                            //模版
 	UserID          *int64  `json:"userId" form:"userId" gorm:"comment:用户ID;column:user_id;"`                                      //用户ID
 	NodeID          *int64  `json:"nodeId" form:"nodeId" gorm:"comment:节点;column:node_id;"`                     //节点

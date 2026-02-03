@@ -12,6 +12,8 @@ func bizModel() error {
 		cloud.ComputeNode{},
 		cloud.ProductSpec{},
 		cloud.Instance{},
+		cloud.FineTuneTask{},
+		cloud.FineTuneTaskSnapshot{},
 	)
 	if err != nil {
 		return err

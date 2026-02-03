@@ -124,6 +124,8 @@
             <template #default="scope">
             <el-button  type="success" link class="table-button" @click="openTerminal(scope.row)"><el-icon style="margin-right: 5px"><Monitor /></el-icon>终端</el-button>
             <el-button  type="info" link class="table-button" @click="openLog(scope.row)"><el-icon style="margin-right: 5px"><Document /></el-icon>日志</el-button>
+            <el-button  type="primary" link class="table-button" @click="openStats(scope.row)"><el-icon style="margin-right: 5px"><DataLine /></el-icon>监控</el-button>
+            <el-button  type="warning" link class="table-button" @click="openFiles(scope.row)"><el-icon style="margin-right: 5px"><Folder /></el-icon>文件</el-button>
             <el-button  type="primary" link class="table-button" @click="getDetails(scope.row)"><el-icon style="margin-right: 5px"><InfoFilled /></el-icon>查看</el-button>
             <el-button  type="primary" link icon="edit" class="table-button" @click="updateInstanceFunc(scope.row)">编辑</el-button>
             <el-button   type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
@@ -170,7 +172,7 @@
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="节点" prop="nodeId">
-                                <el-select v-model="formData.nodeId" placeholder="请选择节点" filterable style="width:100%">
+                                <el-select v-model="formData.nodeId" placeholder="请选择节点" filterable style="width:100%" @change="handleNodeChange">
                                     <el-option v-for="(item,key) in dataSource.nodeId" :key="key" :label="item.label" :value="item.value" />
                                 </el-select>
                             </el-form-item>
@@ -179,16 +181,9 @@
 
                     <el-row :gutter="16">
                         <el-col :span="12">
-                            <el-form-item label="镜像" prop="mirrorId">
-                                <el-select v-model="formData.mirrorId" placeholder="请选择镜像" filterable style="width:100%">
-                                    <el-option v-for="(item,key) in dataSource.mirrorId" :key="key" :label="item.label" :value="item.value" />
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
-                        <el-col :span="12">
-                            <el-form-item label="规格模版">
-                                <el-select v-model="formData.templateId" placeholder="选择模版自动填充配置" filterable clearable style="width:100%" @change="onTemplateChange">
-                                    <el-option v-for="(item,key) in dataSource.templateId" :key="key" :label="item.label" :value="item.value" />
+                            <el-form-item label="镜像" prop="imageName">
+                                <el-select v-model="formData.imageName" placeholder="请先选择节点" filterable style="width:100%" :loading="loadingImages" :disabled="!formData.nodeId">
+                                    <el-option v-for="item in imageList" :key="item.value" :label="item.label" :value="item.value" />
                                 </el-select>
                             </el-form-item>
                         </el-col>
@@ -295,9 +290,6 @@
                 <el-descriptions-item label="节点">
                     {{ filterDataSource(dataSource.nodeId,detailForm.nodeId) }}
                 </el-descriptions-item>
-                <el-descriptions-item label="规格模版">
-                    {{ filterDataSource(dataSource.templateId,detailForm.templateId) }}
-                </el-descriptions-item>
                 <el-descriptions-item label="容器状态">
                     <el-tag v-if="detailForm.containerStatus === '运行中'" type="success" size="small">运行中</el-tag>
                     <el-tag v-else-if="detailForm.containerStatus === '已停止'" type="info" size="small">已停止</el-tag>
@@ -343,6 +335,12 @@
                 </el-descriptions-item>
             </el-descriptions>
     </el-drawer>
+
+    <!-- 监控弹窗 -->
+    <ContainerStats v-model="statsVisible" :instance="currentInstance" />
+
+    <!-- 文件管理弹窗 -->
+    <ContainerFileManager v-model="filesVisible" :instance="currentInstance" />
 
     <!-- WebSSH 终端弹窗 -->
     <el-dialog
@@ -423,8 +421,12 @@ import {
   startInstance,
   syncInstances
 } from '@/api/cloud/instance'
+import { getImages } from '@/api/cloud/image'
 import { getComputeNodeList } from '@/api/cloud/compute_node'
 import WebTerminal from '@/components/WebTerminal/WebTerminal.vue'
+import WebLog from '@/components/WebLog/WebLog.vue'
+import ContainerStats from '@/components/ContainerStats/ContainerStats.vue'
+import ContainerFileManager from '@/components/ContainerFileManager/ContainerFileManager.vue'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict ,filterDataSource, returnArrImg, onDownloadFile } from '@/utils/format'
@@ -543,10 +545,63 @@ const onTerminalError = (error) => {
 }
 // ============ WebSSH 终端结束 ============
 
+// ============ 容器日志相关 ============
+const logVisible = ref(false)
+
+// 计算日志 WebSocket URL
+const logUrl = computed(() => {
+  if (!currentInstance.value) return ''
+
+  // 获取当前主机的协议和主机名
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+  const baseUrl = import.meta.env.VITE_BASE_API || ''
+
+  // 构建 WebSocket URL
+  return `${protocol}//${host}${baseUrl}/inst/logs?id=${currentInstance.value.ID}&x-token=${encodeURIComponent(userStore.token)}`
+})
+
+// 打开日志
+const openLog = (row) => {
+  currentInstance.value = row
+  logVisible.value = true
+}
+
+// 关闭日志
+const closeLog = () => {
+  logVisible.value = false
+  currentInstance.value = null
+}
+// ============ 容器日志结束 ============
+
+// ============ 容器监控相关 ============
+const statsVisible = ref(false)
+const openStats = (row) => {
+    if (row.containerStatus !== '运行中') {
+        ElMessage.warning('容器未运行，无法查看监控')
+        return
+    }
+    currentInstance.value = row
+    statsVisible.value = true
+}
+// ============ 容器监控结束 ============
+
+// ============ 容器文件管理相关 ============
+const filesVisible = ref(false)
+const openFiles = (row) => {
+    if (row.containerStatus !== '运行中') {
+        ElMessage.warning('容器未运行，无法管理文件')
+        return
+    }
+    currentInstance.value = row
+    filesVisible.value = true
+}
+// ============ 容器文件管理结束 ============
+
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
             mirrorId: undefined,
-            templateId: undefined,
+            imageName: '',
             nodeId: undefined,
             instanceName: '',
             cpu: 1,
@@ -567,19 +622,35 @@ const formData = ref({
   }
   getDataSourceFunc()
 
+  // 镜像列表
+  const imageList = ref([])
+  const loadingImages = ref(false)
 
-  // 模版变更时自动填充资源配置
-  const onTemplateChange = async (templateId) => {
-      if (!templateId) return
-      // 这里可以根据模版ID获取模版详情并自动填充
-      // 暂时简化处理，实际可以调用API获取模版详情
+  // 监听节点变化
+  const handleNodeChange = async (val) => {
+    formData.value.mirrorId = undefined
+    formData.value.imageName = ''
+    imageList.value = []
+    if (!val) return
+    
+    loadingImages.value = true
+    try {
+        const res = await getImages({ nodeId: val })
+        if (res.code === 0) {
+            imageList.value = res.data.map(img => ({
+                label: (img.RepoTags && img.RepoTags.length > 0) ? img.RepoTags[0] : img.Id.substring(7, 19),
+                value: (img.RepoTags && img.RepoTags.length > 0) ? img.RepoTags[0] : img.Id // 这里用 RepoTags[0] 作为 value，因为后端可能需要 image name 来启动
+            }))
+        }
+    } finally {
+        loadingImages.value = false
+    }
   }
-
 
 
 // 验证规则
 const rule = reactive({
-               mirrorId : [{
+               imageName : [{
                    required: true,
                    message: '请选择镜像',
                    trigger: ['change','blur'],
@@ -758,7 +829,7 @@ const closeDialog = () => {
     dialogFormVisible.value = false
     formData.value = {
         mirrorId: undefined,
-        templateId: undefined,
+        imageName: '',
         nodeId: undefined,
         instanceName: '',
         cpu: 1,

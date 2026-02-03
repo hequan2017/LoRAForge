@@ -5,4 +5,8 @@ type ServiceGroup struct {
 	ComputeNodeService
 	ProductSpecService
 	InstanceService
+	ImageService
+	NetworkService
+	VolumeService
+	FineTuneTaskService
 }

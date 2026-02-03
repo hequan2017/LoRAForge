@@ -2,8 +2,6 @@
 
 <div align="center">
 
-![LoRAForge Logo](docs/gin-vue-admin.png)
-
 基于 Gin-Vue-Admin 框架开发的一站式云资源管理系统
 
 [![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://golang.org/)

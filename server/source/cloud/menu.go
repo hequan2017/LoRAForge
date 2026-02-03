@@ -93,31 +93,61 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			MenuLevel: 1,
 			Hidden:    false,
 			ParentId:  existingParent.ID,
-			Path:      "productSpec",
-			Name:      "productSpec",
-			Component: "view/cloud/product_spec/product_spec.vue",
-			Sort:      2,
-			Meta:      Meta{Title: "产品规格", Icon: "files"},
-		},
-		{
-			MenuLevel: 1,
-			Hidden:    false,
-			ParentId:  existingParent.ID,
 			Path:      "computeNode",
 			Name:      "computeNode",
 			Component: "view/cloud/compute_node/compute_node.vue",
-			Sort:      3,
+			Sort:      2,
 			Meta:      Meta{Title: "算力节点", Icon: "cpu"},
 		},
 		{
 			MenuLevel: 1,
 			Hidden:    false,
 			ParentId:  existingParent.ID,
-			Path:      "mirrorRepository",
-			Name:      "mirrorRepository",
-			Component: "view/cloud/mirror_repository/mirror_repository.vue",
+			Path:      "productSpec",
+			Name:      "productSpec",
+			Component: "view/cloud/product_spec/product_spec.vue",
+			Sort:      3,
+			Meta:      Meta{Title: "产品规格", Icon: "files"},
+		},
+		{
+			MenuLevel: 1,
+			Hidden:    false,
+			ParentId:  existingParent.ID,
+			Path:      "nodeImage",
+			Name:      "nodeImage",
+			Component: "view/cloud/image/image.vue",
 			Sort:      4,
-			Meta:      Meta{Title: "镜像库", Icon: "box"},
+			Meta:      Meta{Title: "节点镜像", Icon: "picture"},
+		},
+		{
+			MenuLevel: 1,
+			Hidden:    false,
+			ParentId:  existingParent.ID,
+			Path:      "nodeNetwork",
+			Name:      "nodeNetwork",
+			Component: "view/cloud/network/network.vue",
+			Sort:      5,
+			Meta:      Meta{Title: "节点网络", Icon: "connection"},
+		},
+		{
+			MenuLevel: 1,
+			Hidden:    false,
+			ParentId:  existingParent.ID,
+			Path:      "nodeVolume",
+			Name:      "nodeVolume",
+			Component: "view/cloud/volume/volume.vue",
+			Sort:      6,
+			Meta:      Meta{Title: "节点数据卷", Icon: "files"},
+		},
+		{
+			MenuLevel: 1,
+			Hidden:    false,
+			ParentId:  existingParent.ID,
+			Path:      "finetuneTask",
+			Name:      "finetuneTask",
+			Component: "view/cloud/finetune_task/finetune_task.vue",
+			Sort:      7,
+			Meta:      Meta{Title: "微调任务", Icon: "aim"},
 		},
 	}
 
@@ -131,7 +161,19 @@ func (i *initMenu) InitializeData(ctx context.Context) (next context.Context, er
 			} else {
 				return ctx, err
 			}
+		} else {
+			// 如果已存在，更新 Hidden 状态
+			if menu.Hidden != existingMenu.Hidden {
+				if err = db.Model(&existingMenu).Update("hidden", menu.Hidden).Error; err != nil {
+					return ctx, errors.Wrap(err, "更新子菜单 "+menu.Meta.Title+" 失败")
+				}
+			}
 		}
+	}
+	
+	// 删除旧的 mirrorRepository 菜单
+	if err := db.Where("name = ?", "mirrorRepository").Delete(&SysBaseMenu{}).Error; err != nil {
+		// 忽略删除错误，可能已经不存在
 	}
 
 	return ctx, nil

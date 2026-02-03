@@ -8,11 +8,6 @@
         <el-option v-for="(item,key) in dataSource.mirrorId" :key="key" :label="item.label" :value="item.value" />
     </el-select>
 </el-form-item>
-        <el-form-item label="模版:" prop="templateId">
-    <el-select v-model="formData.templateId" placeholder="请选择模版" filterable style="width:100%" :clearable="false">
-        <el-option v-for="(item,key) in dataSource.templateId" :key="key" :label="item.label" :value="item.value" />
-    </el-select>
-</el-form-item>
         <el-form-item label="节点:" prop="nodeId">
     <el-select v-model="formData.nodeId" placeholder="请选择节点" filterable style="width:100%" :clearable="false">
         <el-option v-for="(item,key) in dataSource.nodeId" :key="key" :label="item.label" :value="item.value" />
@@ -61,7 +56,6 @@ const btnLoading = ref(false)
 const type = ref('')
 const formData = ref({
             mirrorId: undefined,
-            templateId: undefined,
             nodeId: undefined,
             instanceName: '',
             remark: '',
@@ -69,11 +63,6 @@ const formData = ref({
 // 验证规则
 const rule = reactive({
                mirrorId : [{
-                   required: true,
-                   message: '',
-                   trigger: ['input','blur'],
-               }],
-               templateId : [{
                    required: true,
                    message: '',
                    trigger: ['input','blur'],

@@ -7,11 +7,16 @@ type ApiGroup struct {
 	ComputeNodeApi
 	ProductSpecApi
 	InstanceApi
+	ImageApi
+	NetworkApi
+	VolumeApi
+	FineTuneTaskApi
 }
 
 var (
-	mirrorService = service.ServiceGroupApp.CloudServiceGroup.MirrorRepositoryService
-	nodeService   = service.ServiceGroupApp.CloudServiceGroup.ComputeNodeService
-	specService   = service.ServiceGroupApp.CloudServiceGroup.ProductSpecService
-	instService   = service.ServiceGroupApp.CloudServiceGroup.InstanceService
+	mirrorService      = service.ServiceGroupApp.CloudServiceGroup.MirrorRepositoryService
+	nodeService        = service.ServiceGroupApp.CloudServiceGroup.ComputeNodeService
+	specService        = service.ServiceGroupApp.CloudServiceGroup.ProductSpecService
+	instService        = service.ServiceGroupApp.CloudServiceGroup.InstanceService
+	fineTuneTaskService = service.ServiceGroupApp.CloudServiceGroup.FineTuneTaskService
 )

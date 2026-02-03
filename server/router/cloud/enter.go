@@ -7,11 +7,16 @@ type RouterGroup struct {
 	ComputeNodeRouter
 	ProductSpecRouter
 	InstanceRouter
+	ImageRouter
+	NetworkRouter
+	VolumeRouter
+	FineTuneTaskRouter
 }
 
 var (
-	mirrorApi = api.ApiGroupApp.CloudApiGroup.MirrorRepositoryApi
-	nodeApi   = api.ApiGroupApp.CloudApiGroup.ComputeNodeApi
-	specApi   = api.ApiGroupApp.CloudApiGroup.ProductSpecApi
-	instApi   = api.ApiGroupApp.CloudApiGroup.InstanceApi
+	mirrorApi       = api.ApiGroupApp.CloudApiGroup.MirrorRepositoryApi
+	nodeApi         = api.ApiGroupApp.CloudApiGroup.ComputeNodeApi
+	specApi         = api.ApiGroupApp.CloudApiGroup.ProductSpecApi
+	instApi         = api.ApiGroupApp.CloudApiGroup.InstanceApi
+	fineTuneTaskApi = api.ApiGroupApp.CloudApiGroup.FineTuneTaskApi
 )
