@@ -20,6 +20,8 @@
 ### 核心价值
 
 - **全生命周期管理** - 从实例创建、启动、停止到删除的完整流程
+- **AI 算力调度** - 专为 GPU 算力优化的任务调度与资源分配
+- **大模型微调** - 内置 LoRA/QLoRA 微调流程，降低 LLM 训练门槛
 - **资源高效利用** - 智能调度算力节点，最大化资源利用率
 - **安全可控** - 支持 Docker TLS 加密连接，细粒度权限控制
 - **开箱即用** - 完善的初始化机制，自动注册 API 和菜单
@@ -40,16 +42,47 @@
 |------|------|
 | **创建实例** | 基于镜像和产品规格快速创建容器实例 |
 | **实例控制** | 启动、停止、重启、删除实例 |
-| **状态监控** | 实时显示容器运行状态和资源使用情况 |
-| **WebSSH** | 内置 Web 终端，直接访问容器 Shell |
+| **状态监控** | 实时显示 CPU、内存、网络、磁盘 I/O 图表 (基于 SSE 实时推送) |
+| **WebSSH** | 内置 Web 终端，支持全彩显示和窗口自适应，直接访问容器 Shell |
+| **文件管理** | 在线浏览、上传、下载容器内文件，方便数据传输 |
 | **自动填充** | 后端自动关联当前用户ID和容器信息 |
 
 **关联关系**：
 ```
-Instance (1:1) → MirrorRepository (镜像库)
 Instance (1:1) → ProductSpec (产品规格)
 Instance (1:1) → ComputeNode (算力节点)
 ```
+
+#### 🧠 模型微调 (Fine-Tuning)
+
+一站式大模型微调任务管理平台，支持主流开源大模型（如 LLaMA, Qwen, ChatGLM 等）的微调训练。
+
+**核心特性**：
+
+*   **训练方式**：支持 LoRA, QLoRA, Full Fine-tuning 等多种微调策略。
+*   **高级参数**：
+    *   **LoRA 配置**：自定义 Rank, Alpha, Dropout, Target Modules
+    *   **训练参数**：Learning Rate, Batch Size, Epochs, Warmup Ratio
+    *   **优化器**：AdamW, Lion 等
+    *   **精度控制**：BF16, FP16, FP32, INT4/INT8 量化
+*   **加速技术**：
+    *   ✅ Flash Attention 2
+    *   ✅ DeepSpeed (ZeRO Stage 2/3)
+    *   ✅ 梯度累积 (Gradient Accumulation)
+*   **实时监控**：
+    *   实时查看训练日志流
+    *   动态 Loss 曲线展示
+    *   训练指标统计 (Loss, Epoch, Step)
+*   **数据管理**：支持自定义数据集路径，支持 Alpaca, ShareGPT 等多种数据格式。
+*   **模型管理**：训练快照自动保存，一键导出最终模型。
+
+#### 🐳 Docker 资源管理
+
+直接管理算力节点上的 Docker 资源，提供底层基础设施的可视化操作。
+
+- **节点镜像**：查看节点镜像列表、拉取新镜像 (支持流式日志)、删除镜像
+- **节点网络**：管理 Docker 网络 (Bridge, Overlay, Macvlan)，支持自定义网段
+- **节点数据卷**：管理 Docker 数据卷，支持持久化存储卷的创建与挂载
 
 #### 📏 产品规格 (Product Specifications)
 
@@ -76,36 +109,52 @@ Instance (1:1) → ComputeNode (算力节点)
 - 硬件配置 (CPU / 内存 / 显卡)
 
 **安全连接**：
-- ✅ 支持 Docker TLS 加密连接
+- ✅ 支持 Docker TLS 加密连接 (双向认证)
 - ✅ 证书管理采用长文本输入 (CA证书、客户端证书、私钥)
-- ✅ 连接测试功能
-
-#### 💿 镜像库 (Mirror Repository)
-
-管理可用的操作系统或应用镜像。
-
-**字段配置**：
-- 镜像名称、地址
-- 镜像来源 (官方 / 自建)
-- 描述信息
-
-**特性**：支持上架/下架管理，控制镜像可用性
+- ✅ 连接测试功能，自动验证节点可用性
 
 ### 2. 🖥️ WebSSH 终端
 
 基于 WebSocket 的 Web 终端功能，无需安装 SSH 客户端即可访问容器。
 
 **核心特性**：
-- 🔒 安全连接 - 通过 WebSocket 建立加密终端会话
-- 📱 响应式 - 自动适配终端窗口大小
-- 💓 心跳保活 - 自动检测连接状态，防止意外断开
-- 🧹 会话管理 - 自动清理超时会话 (默认30分钟)
-- 🎨 彩色终端 - 支持 xterm-256color 完整色彩
+- 🔒 **安全连接** - 通过 WebSocket 建立加密终端会话，后端自动进行 Docker Exec 交互
+- 📱 **响应式** - 自动适配终端窗口大小 (Resize Observer)
+- 💓 **心跳保活** - 自动检测连接状态，防止意外断开
+- 🧹 **会话管理** - 自动清理超时会话 (默认30分钟)
+- 🎨 **彩色终端** - 支持 xterm-256color 完整色彩，完美支持 Vim, Htop 等交互式命令
 
 **技术实现**：
-- 后端：Gorilla WebSocket + Docker Exec API
-- 前端：xterm.js 终端模拟器
-- 双向数据流：WebSocket 输入 ⇄ Docker 容器输出
+- 后端：Gorilla WebSocket + Docker Exec API (Hijack IO)
+- 前端：xterm.js + xterm-addon-fit + xterm-addon-web-links
+- 双向数据流：WebSocket 输入 ⇄ Docker 容器 Stdin/Stdout
+
+---
+
+## 🏗️ 系统架构
+
+```mermaid
+graph TD
+    User[用户] --> Web[Web 前端 (Vue3)]
+    Web --> Nginx[Nginx 网关]
+    Nginx --> API[后端 API (Gin)]
+    
+    subgraph "管理节点 (Server)"
+        API --> DB[(MySQL/PgSQL)]
+        API --> Redis[(Redis)]
+        API --> Service[业务逻辑层]
+        Service --> DockerClient[Docker SDK]
+    end
+    
+    subgraph "算力节点 (Compute Node)"
+        DockerClient --TLS--> DockerDaemon[Docker Daemon]
+        DockerDaemon --> Container[容器实例]
+        DockerDaemon --> FinetuneTask[微调任务容器]
+    end
+    
+    Web --WebSocket--> API
+    API --Hijack--> Container
+```
 
 ---
 
@@ -116,30 +165,36 @@ Instance (1:1) → ComputeNode (算力节点)
 | 技术 | 版本 | 用途 |
 |------|------|------|
 | Go | 1.23+ | 后端开发语言 |
-| Gin | 1.10.0 | Web 框架 |
-| GORM | 1.25.12 | ORM 数据库操作 |
-| Docker Client | - | 容器管理 API |
-| Gorilla WebSocket | - | WebSocket 通信 |
-| Zap | 1.27.0 | 结构化日志 |
-| Casbin | 2.103.0 | 权限控制 |
+| Gin | 1.10.0 | 高性能 Web 框架 |
+| GORM | 1.25.12 | ORM 数据库操作 (支持 MySQL, PgSQL, SQLite, SQL Server) |
+| Docker Client | 24.0+ | 容器管理 API (Moby Project) |
+| Gorilla WebSocket | 1.5.0 | WebSocket 通信 |
+| Zap | 1.27.0 | 高性能结构化日志 |
+| Casbin | 2.103.0 | RBAC 权限控制 |
+| Viper | 1.19.0 | 配置管理 |
 
 ### 前端技术栈
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| Vue | 3.5.7+ | 前端框架 |
-| Vite | 6.2.3 | 构建工具 |
-| Element Plus | 2.10.2 | UI 组件库 |
+| Vue | 3.5.7+ | 渐进式前端框架 |
+| Vite | 6.2.3 | 下一代前端构建工具 |
+| Element Plus | 2.10.2 | 基于 Vue 3 的 UI 组件库 |
 | Pinia | 2.2.2 | 状态管理 |
-| xterm.js | - | Web 终端组件 |
-| UnoCSS | 66.4.2 | 原子化 CSS |
+| xterm.js | 5.3.0 | Web 终端组件 |
+| ECharts | 5.5.0 | 数据可视化图表 |
+| UnoCSS | 66.4.2 | 原子化 CSS 引擎 |
+| Axios | 1.7.0 | HTTP 客户端 |
 
 ### 架构特性
 
-- **模块化设计**：业务逻辑独立于 `cloud` 包中，不侵入系统核心代码
-- **自动化初始化**：实现 `SubInitializer` 接口，支持通过 `gowatch` 热编译自动注册
-- **分层架构**：严格遵循 Model → Service → API → Router 分层设计
-- **统一响应**：标准化的 JSON 响应格式
+- **模块化设计**：业务逻辑独立于 `cloud` 包中，不侵入系统核心代码，方便升级维护
+- **自动化初始化**：实现 `SubInitializer` 接口，支持通过 `gowatch` 热编译自动注册菜单、API 和权限
+- **分层架构**：严格遵循 Model → Service → API → Router 分层设计，职责清晰
+- **实时通信**：
+    - **WebSSH**: 基于 WebSocket 实现低延迟终端交互
+    - **监控/日志**: 基于 SSE (Server-Sent Events) 实现轻量级实时数据推送
+- **统一响应**：标准化的 JSON 响应格式，统一错误处理
 
 ---
 
@@ -151,17 +206,25 @@ LoRAForge/
 │   ├── api/v1/cloud/               # 云资源 API 接口层
 │   │   ├── compute_node.go         # 算力节点 API
 │   │   ├── instance.go             # 实例管理 API
-│   │   ├── mirror_repository.go    # 镜像库 API
+│   │   ├── instance_stats.go       # 实例监控 API (SSE)
+│   │   ├── fineTuneTask.go         # 微调任务 API
+│   │   ├── image.go                # 镜像管理 API
+│   │   ├── network.go              # 网络管理 API
+│   │   ├── volume.go               # 卷管理 API
 │   │   └── product_spec.go         # 产品规格 API
 │   ├── service/cloud/              # 云资源业务逻辑层
 │   │   ├── computeNode.go          # 算力节点服务
 │   │   ├── instance.go             # 实例管理服务
 │   │   ├── webssh.go               # WebSSH 终端服务
+│   │   ├── fineTuneTask.go         # 微调任务服务
+│   │   ├── image.go                # 镜像服务
+│   │   ├── network.go              # 网络服务
+│   │   ├── volume.go               # 卷服务
 │   │   └── ...                     # 其他服务
 │   ├── model/cloud/                # 云资源数据模型
 │   │   ├── compute_node.go         # 算力节点模型
 │   │   ├── instance.go             # 实例模型
-│   │   ├── mirror_repository.go    # 镜像库模型
+│   │   ├── fineTuneTask.go         # 微调任务模型
 │   │   ├── product_spec.go         # 产品规格模型
 │   │   └── request/                # 请求 DTO
 │   ├── source/cloud/               # 初始化数据
@@ -173,7 +236,10 @@ LoRAForge/
 │   └── src/view/cloud/             # 云资源页面组件
 │       ├── compute_node/           # 算力节点页面
 │       ├── instance/               # 实例管理页面
-│       ├── mirror_repository/      # 镜像库页面
+│       ├── finetune_task/          # 微调任务页面
+│       ├── image/                  # 节点镜像页面
+│       ├── network/                # 节点网络页面
+│       ├── volume/                 # 节点卷页面
 │       └── product_spec/           # 产品规格页面
 │
 └── deploy/                         # 部署配置
@@ -188,11 +254,11 @@ LoRAForge/
 
 ### 前置要求
 
-- Go 1.23+
-- Node.js 18+
-- MySQL 5.7+ / PostgreSQL 12+
-- Redis 6+
-- Docker (用于算力节点)
+- **Go**: 1.23+
+- **Node.js**: 18+
+- **Database**: MySQL 5.7+ / PostgreSQL 12+
+- **Cache**: Redis 6+
+- **Compute Node**: 至少一台安装了 Docker (建议开启 TLS) 的服务器
 
 ### 1. 克隆项目
 
@@ -201,47 +267,62 @@ git clone https://github.com/your-username/LoRAForge.git
 cd LoRAForge
 ```
 
-### 2. 启动后端
+### 2. 启动后端 (Server)
 
 ```bash
 cd server
 
-# 安装依赖
+# 1. 安装依赖
 go mod tidy
 
-# 修改配置文件
-# 编辑 config.yaml，配置数据库和 Redis 连接信息
+# 2. 修改配置文件
+# 复制 config.yaml 并修改数据库和 Redis 连接信息
+cp config.yaml.example config.yaml
+vi config.yaml
 
-# 启动服务
+# 3. 启动服务
+# 首次启动会自动初始化数据库表结构和基础数据
 go run main.go
 
 # 或使用 gowatch 热加载（推荐开发环境）
+go install github.com/silenceper/gowatch@latest
 gowatch
 ```
 
-后端默认运行在 `http://localhost:8888`
+后端默认运行在 `http://localhost:8888`，Swagger 文档地址：`http://localhost:8888/swagger/index.html`
 
-### 3. 启动前端
+### 3. 启动前端 (Web)
 
 ```bash
 cd web
 
-# 安装依赖
+# 1. 安装依赖
 npm install
 
-# 启动开发服务器
+# 2. 启动开发服务器
 npm run dev
 ```
 
 前端默认运行在 `http://localhost:8080`
 
-### 4. 访问系统
+### 4. 系统初始化
 
-打开浏览器访问 `http://localhost:8080`
+1.  打开浏览器访问 `http://localhost:8080`
+2.  使用默认超级管理员账号登录：
+    *   用户名：`admin`
+    *   密码：`123456`
+3.  进入 **系统管理 -> 角色管理**，确保当前角色拥有 `cloud` 相关菜单和 API 的权限（系统会自动初始化，如未显示请检查初始化日志）。
+4.  进入 **云资源管理 -> 算力节点**，添加您的第一台 Docker 算力节点。
 
-**默认账号**：
-- 用户名：`admin`
-- 密码：`123456`
+---
+
+## 🔮 未来规划
+
+- [ ] **多租户隔离**：基于 Namespace 的资源隔离
+- [ ] **GPU 虚拟化**：支持 MPS 或 vGPU 切分
+- [ ] **模型广场**：集成 HuggingFace/ModelScope 模型下载与管理
+- [ ] **自动扩缩容**：基于负载的节点自动伸缩
+- [ ] **计费系统**：按量计费与充值模块
 
 ---
 
@@ -251,8 +332,9 @@ npm run dev
 
 - 算力节点列表 - 展示所有可用的计算资源节点
 - 产品规格管理 - 定义不同档次的云主机规格
-- 镜像库管理 - 管理可部署的系统镜像
-- 实例管理 - 用户云主机的完整生命周期管理
+- Docker 资源管理 - 镜像、网络、卷的统一管理
+- 实例管理 - 用户云主机的完整生命周期管理（含文件/监控）
+- 微调任务 - 大模型微调全流程管理
 
 ### WebSSH 终端
 

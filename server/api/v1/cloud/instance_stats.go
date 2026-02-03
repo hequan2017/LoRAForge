@@ -3,7 +3,7 @@ package cloud
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
+	"io"
 	"strconv"
 	"time"
 
