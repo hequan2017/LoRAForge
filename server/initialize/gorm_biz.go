@@ -7,14 +7,7 @@ import (
 
 func bizModel() error {
 	db := global.GVA_DB
-	err := db.AutoMigrate(
-		cloud.MirrorRepository{},
-		cloud.ComputeNode{},
-		cloud.ProductSpec{},
-		cloud.Instance{},
-		cloud.FineTuneTask{},
-		cloud.FineTuneTaskSnapshot{},
-	)
+	err := db.AutoMigrate(cloud.MirrorRepository{}, cloud.ComputeNode{}, cloud.ProductSpec{}, cloud.Instance{}, cloud.FineTuneTask{}, cloud.FineTuneTaskSnapshot{}, cloud.InferenceTask{}, cloud.SwiftWebUI{})
 	if err != nil {
 		return err
 	}

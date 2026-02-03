@@ -47,8 +47,8 @@ func initServer(address string, router *gin.Engine, readTimeout, writeTimeout ti
 	<-quit
 	zap.L().Info("关闭WEB服务...")
 
-	// 设置5秒的超时时间
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 设置30秒的超时时间，确保长连接(SSE/WebSocket)和资源能正确关闭
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
 	defer cancel()
 

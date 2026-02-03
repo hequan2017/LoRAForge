@@ -11,6 +11,8 @@ type RouterGroup struct {
 	NetworkRouter
 	VolumeRouter
 	FineTuneTaskRouter
+	InferenceTaskRouter
+	SwiftWebUIRouter
 }
 
 var (
@@ -19,4 +21,6 @@ var (
 	specApi         = api.ApiGroupApp.CloudApiGroup.ProductSpecApi
 	instApi         = api.ApiGroupApp.CloudApiGroup.InstanceApi
 	fineTuneTaskApi = api.ApiGroupApp.CloudApiGroup.FineTuneTaskApi
+	inferenceApi    = api.ApiGroupApp.CloudApiGroup.InferenceTaskApi
+	SwiftWebUIApi   = api.ApiGroupApp.CloudApiGroup.SwiftWebUIApi
 )

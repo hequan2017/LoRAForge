@@ -9,4 +9,6 @@ type ServiceGroup struct {
 	NetworkService
 	VolumeService
 	FineTuneTaskService
+	InferenceTaskService
+	SwiftWebUIService
 }
